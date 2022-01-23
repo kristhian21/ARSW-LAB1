@@ -6,6 +6,8 @@
 package edu.eci.arsw.blacklistvalidator;
 
 import edu.eci.arsw.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -17,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class HostBlackListsValidator {
 
-    private static final int BLACK_LIST_ALARM_COUNT=5;
+    public static final int BLACK_LIST_ALARM_COUNT=5;
     
     /**
      * Check the given host's IP address in all the available black lists,
@@ -30,29 +32,34 @@ public class HostBlackListsValidator {
      * @return  Blacklists numbers where the given host's IP address was found.
      */
     public List<Integer> checkHost(String ipaddress, int cantidadHilos){
-        
-        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
+
+        ArrayList<Hilo> colleccionHilos = new ArrayList<>();
         
         int ocurrencesCount=0;
+        int checkedListsCount;
         
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
 
         int serverListSize = skds.getRegisteredServersCount();
-        if(serverListSize < cantidadHilos ){}
-        
-        int checkedListsCount=0;
-        
-        for (int i=0;i<skds.getRegisteredServersCount() && ocurrencesCount<BLACK_LIST_ALARM_COUNT;i++){
-            checkedListsCount++;
-            
-            if (skds.isInBlackListServer(i, ipaddress)){
-                
-                blackListOcurrences.add(i);
-                
-                ocurrencesCount++;
+
+        for (int i = 0; i < cantidadHilos; i++) {
+            colleccionHilos.add(new Hilo((int) i * serverListSize / cantidadHilos, (int) (i + 1) * serverListSize / cantidadHilos, ipaddress));
+        }
+
+        for (Hilo h: colleccionHilos) {
+            h.start();
+        }
+
+        for (Hilo h: colleccionHilos) {
+            try {
+                h.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-        
+
+        ocurrencesCount = Hilo.contador;
+        checkedListsCount = Hilo.checkedLists;
         if (ocurrencesCount>=BLACK_LIST_ALARM_COUNT){
             skds.reportAsNotTrustworthy(ipaddress);
         }
@@ -62,7 +69,7 @@ public class HostBlackListsValidator {
         
         LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});
         
-        return blackListOcurrences;
+        return Hilo.blackListOcurrences;
     }
     
     
