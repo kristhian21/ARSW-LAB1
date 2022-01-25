@@ -30,5 +30,4 @@ public class CountThread extends Thread{
             System.out.println(e.toString());
         }
     }
-
 }

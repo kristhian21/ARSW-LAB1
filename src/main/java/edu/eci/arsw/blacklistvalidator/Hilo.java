@@ -30,7 +30,7 @@ public class Hilo extends  Thread{
 
     public void run(){
         try {
-            for (int i = a; i < b && contador<HostBlackListsValidator.BLACK_LIST_ALARM_COUNT ; i++) {
+            for (int i = a; i < b; i++) {
                 countList();
                 if (skds.isInBlackListServer(i, ip)){
                     blackListOcurrences.add(i);
